@@ -67,6 +67,7 @@ class BaseScanner<T> {
   protected scannerName: string;
   protected enable4kMovie = false;
   protected enable4kShow = false;
+  protected enableAudioBook = false;
   protected sessionId: string;
   protected running = false;
   readonly asyncLock = new AsyncLock();
@@ -256,6 +257,146 @@ class BaseScanner<T> {
             is4k && this.enable4kMovie ? jellyfinMediaId : undefined;
         }
 
+        await mediaRepository.save(newMedia);
+        this.log(`Saved new media: ${title}`);
+      }
+    });
+  }
+
+  protected async processBook(
+    hcId: number,
+    {
+      is4k = false,
+      mediaAddedAt,
+      ratingKey,
+      serviceId,
+      externalServiceId,
+      externalServiceSlug,
+      processing = false,
+      title = 'Unknown Title',
+      hasFile = true,
+    }: ProcessOptions = {}
+  ): Promise<void> {
+    const mediaRepository = getRepository(Media);
+
+    await this.asyncLock.dispatch(hcId, async () => {
+      const existing = await this.getExisting(hcId, MediaType.BOOK);
+
+      if (existing) {
+        let changedExisting = false;
+
+        if (existing[is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE) {
+          const statusField = is4k ? 'status4k' : 'status';
+          const previousStatus = existing[statusField];
+
+          existing[statusField] =
+            !processing && hasFile
+              ? MediaStatus.AVAILABLE
+              : !processing &&
+                  !hasFile &&
+                  previousStatus === MediaStatus.PROCESSING
+                ? MediaStatus.UNKNOWN
+                : processing
+                  ? previousStatus === MediaStatus.DELETED
+                    ? MediaStatus.DELETED
+                    : MediaStatus.PROCESSING
+                  : previousStatus;
+
+          if (existing[statusField] !== previousStatus) {
+            if (mediaAddedAt) {
+              existing.mediaAddedAt = mediaAddedAt;
+            }
+            changedExisting = true;
+          }
+        }
+
+        if (!changedExisting && !existing.mediaAddedAt && mediaAddedAt) {
+          existing.mediaAddedAt = mediaAddedAt;
+          changedExisting = true;
+        }
+
+        if (
+          ratingKey &&
+          existing[is4k ? 'ratingKey4k' : 'ratingKey'] !== ratingKey
+        ) {
+          existing[is4k ? 'ratingKey4k' : 'ratingKey'] = ratingKey;
+          changedExisting = true;
+        }
+
+        if (
+          serviceId !== undefined &&
+          existing[is4k ? 'serviceId4k' : 'serviceId'] !== serviceId
+        ) {
+          existing[is4k ? 'serviceId4k' : 'serviceId'] = serviceId;
+          changedExisting = true;
+        }
+
+        if (
+          externalServiceId !== undefined &&
+          existing[is4k ? 'externalServiceId4k' : 'externalServiceId'] !==
+            externalServiceId
+        ) {
+          existing[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+            externalServiceId;
+          changedExisting = true;
+        }
+
+        if (
+          externalServiceSlug !== undefined &&
+          existing[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] !==
+            externalServiceSlug
+        ) {
+          existing[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
+            externalServiceSlug;
+          changedExisting = true;
+        }
+
+        if (changedExisting) {
+          await mediaRepository.save(existing);
+          this.log(
+            `Media for ${title} exists. Changes were detected and the title will be updated.`,
+            'info'
+          );
+        } else {
+          this.log(`Title already exists and no changes detected for ${title}`);
+        }
+      } else {
+        if (!processing && !hasFile) {
+          return;
+        }
+
+        const newMedia = new Media();
+        newMedia.tmdbId = hcId;
+
+        newMedia.status =
+          !is4k && !processing
+            ? MediaStatus.AVAILABLE
+            : !is4k && processing
+              ? MediaStatus.PROCESSING
+              : MediaStatus.UNKNOWN;
+        newMedia.status4k =
+          is4k && this.enableAudioBook && !processing
+            ? MediaStatus.AVAILABLE
+            : is4k && this.enableAudioBook && processing
+              ? MediaStatus.PROCESSING
+              : MediaStatus.UNKNOWN;
+        newMedia.mediaType = MediaType.BOOK;
+        newMedia.serviceId = !is4k ? serviceId : undefined;
+        newMedia.serviceId4k = is4k ? serviceId : undefined;
+        newMedia.externalServiceId = !is4k ? externalServiceId : undefined;
+        newMedia.externalServiceId4k = is4k ? externalServiceId : undefined;
+        newMedia.externalServiceSlug = !is4k ? externalServiceSlug : undefined;
+        newMedia.externalServiceSlug4k = is4k ? externalServiceSlug : undefined;
+
+        if (mediaAddedAt) {
+          newMedia.mediaAddedAt = mediaAddedAt;
+        }
+
+        if (ratingKey) {
+          newMedia.ratingKey = !is4k ? ratingKey : undefined;
+          newMedia.ratingKey4k =
+            is4k && this.enableAudioBook ? ratingKey : undefined;
+        }
         await mediaRepository.save(newMedia);
         this.log(`Saved new media: ${title}`);
       }
@@ -679,8 +820,12 @@ class BaseScanner<T> {
       await requestRepository.save(request);
       this.log(
         `Declined orphaned ${
-          media.mediaType === MediaType.MOVIE ? 'movie' : 'series'
-        } request ${request.id} for ${media.tmdbId} not found in any Sonarr/Radarr server.`,
+          media.mediaType === MediaType.MOVIE
+            ? 'movie'
+            : media.mediaType === MediaType.BOOK
+              ? 'book'
+              : 'series'
+        } request ${request.id} for ${media.tmdbId} not found in any Sonarr/Radarr/Readarr server.`,
         'info'
       );
     }
@@ -711,6 +856,14 @@ class BaseScanner<T> {
     if (this.enable4kShow) {
       this.log(
         'At least one 4K Sonarr server was detected. 4K series detection is now enabled',
+        'info'
+      );
+    }
+
+    this.enableAudioBook = settings.readarr.some((readarr) => readarr.is4k);
+    if (this.enableAudioBook) {
+      this.log(
+        'At least one Audiobook Readarr server was detected. Audiobook detection is now enabled',
         'info'
       );
     }
