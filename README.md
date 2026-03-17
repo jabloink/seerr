@@ -1,6 +1,28 @@
 <p align="center">
 <img src="./public/logo_full.svg" alt="Seerr" style="margin: 20px 0;">
 </p>
+
+> [!WARNING]
+>
+> ### Book Support Fork
+>
+> This fork adds book support to Seerr using [Hardcover](https://hardcover.app). It is currently in testing and under active development.
+>
+> **Before you begin, please make a backup of your database and settings.**
+>
+> #### Requirements
+>
+> - You must be running Seerr v3.1.0 or later. If you are coming from an older version, please update to v3.1.0 first.
+> - A [Hardcover](https://hardcover.app) account is required. You will need to generate a personal API key from your [account settings](https://hardcover.app/account/api) and enter it in the Seerr settings page.
+>
+> #### Migration
+>
+> - If you are already running Seerr v3.1.0, simply replace your installation with this fork. Your existing database and settings will be migrated automatically on first start.
+>
+> #### Notes
+>
+> - Image caching is enabled for Hardcover content.
+> - Chaptarr support is planned for a future release.
 <p align="center">
 <img src="https://github.com/seerr-team/seerr/actions/workflows/release.yml/badge.svg" alt="Seerr Release" />
 <img src="https://github.com/seerr-team/seerr/actions/workflows/ci.yml/badge.svg" alt="Seerr CI">
