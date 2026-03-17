@@ -247,6 +247,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     hideRequested: false,
     movie4kEnabled: false,
     series4kEnabled: false,
+    bookAudioEnabled: false,
     localLogin: true,
     mediaServerLogin: true,
     discoverRegion: '',

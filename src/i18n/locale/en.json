@@ -991,6 +991,7 @@
   "components.Settings.SettingsJobsCache.process": "Process",
   "components.Settings.SettingsJobsCache.process-blocklisted-tags": "Process Blocklisted Tags",
   "components.Settings.SettingsJobsCache.radarr-scan": "Radarr Scan",
+  "components.Settings.SettingsJobsCache.readarr-scan": "Readarr Scan",
   "components.Settings.SettingsJobsCache.runnow": "Run Now",
   "components.Settings.SettingsJobsCache.size": "Size",
   "components.Settings.SettingsJobsCache.sonarr-scan": "Sonarr Scan",
