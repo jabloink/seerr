@@ -79,10 +79,15 @@ class WebPushAgent
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? intl.formatMessage(globalMessages.movie)
-        : intl.formatMessage(globalMessages.series)
+        : payload.media.mediaType === MediaType.BOOK
+          ? intl.formatMessage(globalMessages.book)
+          : intl.formatMessage(globalMessages.series)
       : undefined;
     const is4k = payload.request?.is4k;
-    const quality = is4k ? '4K ' : '';
+    const isBook = payload.media?.mediaType === MediaType.BOOK;
+    // Books reuse the is4k flag to mean "audiobook"; render "audiobook" (no
+    // trailing space so it composes to one word) instead of "4K ".
+    const quality = is4k ? (isBook ? 'audio' : '4K ') : '';
 
     const issueType = payload.issue
       ? payload.issue.issueType !== IssueType.OTHER
