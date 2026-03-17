@@ -21,12 +21,16 @@ import { mutate } from 'swr';
 const messages = defineMessages('components.RequestButton', {
   viewrequest: 'View Request',
   viewrequest4k: 'View 4K Request',
+  viewrequestaudiobook: 'View Audiobook Request',
   requestmore: 'Request More',
   requestmore4k: 'Request More in 4K',
+  requestmoreaudiobook: 'Request More Audiobook',
   approverequest: 'Approve Request',
   approverequest4k: 'Approve 4K Request',
+  approverequestaudiobook: 'Approve Audiobook Request',
   declinerequest: 'Decline Request',
   declinerequest4k: 'Decline 4K Request',
+  declinerequestaudiobook: 'Decline Audiobook Request',
   approverequests:
     'Approve {requestCount, plural, one {Request} other {{requestCount} Requests}}',
   declinerequests:
@@ -45,7 +49,7 @@ interface ButtonOption {
 }
 
 interface RequestButtonProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'book';
   onUpdate: () => void;
   tmdbId: number;
   media?: Media;
@@ -146,7 +150,7 @@ const RequestButton = ({
     if (
       activeRequest &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
-      mediaType === 'movie'
+      (mediaType === 'movie' || mediaType === 'book')
     ) {
       buttons.push(
         {
@@ -204,7 +208,11 @@ const RequestButton = ({
     ) {
       buttons.push({
         id: 'active-4k-request',
-        text: intl.formatMessage(messages.viewrequest4k),
+        text: intl.formatMessage(
+          mediaType === 'book'
+            ? messages.viewrequestaudiobook
+            : messages.viewrequest4k
+        ),
         action: () => {
           setEditRequest(true);
           setShowRequest4kModal(true);
@@ -216,12 +224,16 @@ const RequestButton = ({
     if (
       active4kRequest &&
       hasPermission(Permission.MANAGE_REQUESTS) &&
-      mediaType === 'movie'
+      (mediaType === 'movie' || mediaType === 'book')
     ) {
       buttons.push(
         {
           id: 'approve-4k-request',
-          text: intl.formatMessage(messages.approverequest4k),
+          text: intl.formatMessage(
+            mediaType === 'book'
+              ? messages.approverequestaudiobook
+              : messages.approverequest4k
+          ),
           action: () => {
             modifyRequest(active4kRequest, 'approve');
           },
@@ -229,7 +241,11 @@ const RequestButton = ({
         },
         {
           id: 'decline-4k-request',
-          text: intl.formatMessage(messages.declinerequest4k),
+          text: intl.formatMessage(
+            mediaType === 'book'
+              ? messages.declinerequestaudiobook
+              : messages.declinerequest4k
+          ),
           action: () => {
             modifyRequest(active4kRequest, 'decline');
           },
@@ -277,7 +293,9 @@ const RequestButton = ({
         Permission.REQUEST,
         mediaType === 'movie'
           ? Permission.REQUEST_MOVIE
-          : Permission.REQUEST_TV,
+          : mediaType === 'tv'
+            ? Permission.REQUEST_TV
+            : Permission.REQUEST_BOOK,
       ],
       { type: 'or' }
     )
@@ -322,16 +340,23 @@ const RequestButton = ({
         Permission.REQUEST_4K,
         mediaType === 'movie'
           ? Permission.REQUEST_4K_MOVIE
-          : Permission.REQUEST_4K_TV,
+          : mediaType === 'tv'
+            ? Permission.REQUEST_4K_TV
+            : Permission.REQUEST_AUDIO_BOOK,
       ],
       { type: 'or' }
     ) &&
     ((settings.currentSettings.movie4kEnabled && mediaType === 'movie') ||
-      (settings.currentSettings.series4kEnabled && mediaType === 'tv'))
+      (settings.currentSettings.series4kEnabled && mediaType === 'tv') ||
+      (settings.currentSettings.bookAudioEnabled && mediaType === 'book'))
   ) {
     buttons.push({
       id: 'request4k',
-      text: intl.formatMessage(globalMessages.request4k),
+      text: intl.formatMessage(
+        mediaType === 'book'
+          ? globalMessages.requestAudio
+          : globalMessages.request4k
+      ),
       action: () => {
         setEditRequest(false);
         setShowRequest4kModal(true);

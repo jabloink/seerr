@@ -24,6 +24,7 @@ import type {
   BlocklistItem,
   BlocklistResultsResponse,
 } from '@server/interfaces/api/blocklistInterfaces';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -55,8 +56,16 @@ enum Filter {
   BLOCKLISTEDTAGS = 'blocklistedTags',
 }
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is MovieDetails => {
+  return (media as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is BookDetails => {
+  return (media as BookDetails).author !== undefined;
 };
 
 const Blocklist = () => {
@@ -282,8 +291,10 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
   const url =
     item.mediaType === 'movie'
       ? `/api/v1/movie/${item.tmdbId}`
-      : `/api/v1/tv/${item.tmdbId}`;
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
+      : item.mediaType === 'tv'
+        ? `/api/v1/tv/${item.tmdbId}`
+        : `/api/v1/book/${item.tmdbId}`;
+  const { data: title, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     inView ? url : null
   );
 
@@ -329,8 +340,8 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
       {title && title.backdropPath && (
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
-            type="tmdb"
-            src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
+            type={item.mediaType === 'book' ? 'hardcover' : 'tmdb'}
+            src={title.backdropPath}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
@@ -350,15 +361,17 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
             href={
               item.mediaType === 'movie'
                 ? `/movie/${item.tmdbId}`
-                : `/tv/${item.tmdbId}`
+                : item.mediaType === 'tv'
+                  ? `/tv/${item.tmdbId}`
+                  : `/book/${item.tmdbId}`
             }
             className="relative h-auto w-12 flex-shrink-0 scale-100 transform-gpu overflow-hidden rounded-md transition duration-300 hover:scale-105"
           >
             <CachedImage
-              type="tmdb"
+              type={item.mediaType === 'book' ? 'hardcover' : 'tmdb'}
               src={
                 title?.posterPath
-                  ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                  ? title.posterPath
                   : '/images/seerr_poster_not_found.png'
               }
               alt=""
@@ -373,18 +386,27 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
               {title &&
                 (isMovie(title)
                   ? title.releaseDate
-                  : title.firstAirDate
+                  : isBook(title)
+                    ? title.releaseDate
+                    : title.firstAirDate
                 )?.slice(0, 4)}
             </div>
             <Link
               href={
                 item.mediaType === 'movie'
                   ? `/movie/${item.tmdbId}`
-                  : `/tv/${item.tmdbId}`
+                  : item.mediaType === 'tv'
+                    ? `/tv/${item.tmdbId}`
+                    : `/book/${item.tmdbId}`
               }
             >
               <span className="mr-2 min-w-0 truncate text-lg font-bold text-white hover:underline xl:text-xl">
-                {title && (isMovie(title) ? title.title : title.name)}
+                {title &&
+                  (isMovie(title)
+                    ? title.title
+                    : isBook(title)
+                      ? title.title
+                      : title.name)}
               </span>
             </Link>
           </div>
@@ -451,10 +473,16 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
                   {intl.formatMessage(globalMessages.movie)}
                 </div>
               </div>
-            ) : (
+            ) : item.mediaType === 'tv' ? (
               <div className="pointer-events-none z-40 self-start rounded-full border border-purple-600 bg-purple-600/80 shadow-md">
                 <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
                   {intl.formatMessage(globalMessages.tvshow)}
+                </div>
+              </div>
+            ) : (
+              <div className="pointer-events-none z-40 self-start rounded-full border border-red-500 bg-red-600/80 shadow-md">
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                  {intl.formatMessage(globalMessages.book)}
                 </div>
               </div>
             )}
@@ -467,7 +495,12 @@ const BlocklistedItem = ({ item, revalidateList }: BlocklistedItemProps) => {
             onClick={() =>
               removeFromBlocklist(
                 item.tmdbId,
-                title && (isMovie(title) ? title.title : title.name)
+                title &&
+                  (isMovie(title)
+                    ? title.title
+                    : isBook(title)
+                      ? title.title
+                      : title.name)
               )
             }
             confirmText={intl.formatMessage(

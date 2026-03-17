@@ -1,4 +1,8 @@
-import type { DVRTestResponse } from '@app/components/Settings/SettingsServices';
+import type {
+  RadarrTestResponse,
+  ReadarrTestResponse,
+  SonarrTestResponse,
+} from '@app/components/Settings/SettingsServices';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
@@ -9,6 +13,7 @@ import type {
   DVRSettings,
   Language,
   RadarrSettings,
+  ReadarrSettings,
   SonarrSettings,
 } from '@server/lib/settings';
 import type { Keyword } from '@server/models/common';
@@ -19,6 +24,7 @@ import useSWR from 'swr';
 
 const messages = defineMessages('components.Settings.OverrideRuleTile', {
   qualityprofile: 'Quality Profile',
+  metadataprofile: 'Metadata Profile',
   rootfolder: 'Root Folder',
   tags: 'Tags',
   users: 'Users',
@@ -41,7 +47,13 @@ interface OverrideRuleTilesProps {
   revalidate: () => void;
   radarrServices: RadarrSettings[];
   sonarrServices: SonarrSettings[];
+  readarrServices: ReadarrSettings[];
 }
+
+type ServiceTestResponse =
+  | RadarrTestResponse
+  | SonarrTestResponse
+  | ReadarrTestResponse;
 
 const OverrideRuleTiles = ({
   rules,
@@ -49,6 +61,7 @@ const OverrideRuleTiles = ({
   revalidate,
   radarrServices,
   sonarrServices,
+  readarrServices,
 }: OverrideRuleTilesProps) => {
   const intl = useIntl();
   const [users, setUsers] = useState<User[] | null>(null);
@@ -56,21 +69,30 @@ const OverrideRuleTiles = ({
   const { data: languages } = useSWR<Language[]>('/api/v1/languages');
   const { data: genres } = useSWR<TmdbGenre[]>('/api/v1/genres/movie');
   const [testResponses, setTestResponses] = useState<
-    (DVRTestResponse & { type: string; id: number })[]
+    (ServiceTestResponse & { type: string; id: number })[]
   >([]);
 
   const getServiceInfos = useCallback(async () => {
-    const results: (DVRTestResponse & { type: string; id: number })[] = [];
-    const services: DVRSettings[] = [...radarrServices, ...sonarrServices];
+    const results: (ServiceTestResponse & { type: string; id: number })[] = [];
+
+    const services: DVRSettings[] = [
+      ...radarrServices,
+      ...sonarrServices,
+      ...readarrServices,
+    ];
     for (const service of services) {
       const { hostname, port, apiKey, baseUrl, useSsl = false } = service;
+      let serviceType: 'radarr' | 'sonarr' | 'readarr';
+      if (radarrServices.includes(service as RadarrSettings)) {
+        serviceType = 'radarr';
+      } else if (sonarrServices.includes(service as SonarrSettings)) {
+        serviceType = 'sonarr';
+      } else {
+        serviceType = 'readarr';
+      }
       try {
-        const response = await axios.post<DVRTestResponse>(
-          `/api/v1/settings/${
-            radarrServices.includes(service as RadarrSettings)
-              ? 'radarr'
-              : 'sonarr'
-          }/test`,
+        const response = await axios.post<ServiceTestResponse>(
+          `/api/v1/settings/${serviceType}/test`,
           {
             hostname,
             apiKey,
@@ -82,7 +104,9 @@ const OverrideRuleTiles = ({
         results.push({
           type: radarrServices.includes(service as RadarrSettings)
             ? 'radarr'
-            : 'sonarr',
+            : readarrServices.includes(service as ReadarrSettings)
+              ? 'readarr'
+              : 'sonarr',
           id: service.id,
           ...response.data,
         });
@@ -90,7 +114,9 @@ const OverrideRuleTiles = ({
         results.push({
           type: radarrServices.includes(service as RadarrSettings)
             ? 'radarr'
-            : 'sonarr',
+            : readarrServices.includes(service as ReadarrSettings)
+              ? 'readarr'
+              : 'sonarr',
           id: service.id,
           profiles: [],
           rootFolders: [],
@@ -99,7 +125,7 @@ const OverrideRuleTiles = ({
       }
     }
     setTestResponses(results);
-  }, [radarrServices, sonarrServices]);
+  }, [radarrServices, readarrServices, sonarrServices]);
 
   useEffect(() => {
     getServiceInfos();
@@ -227,7 +253,7 @@ const OverrideRuleTiles = ({
                 {intl.formatMessage(messages.settings)}
               </span>
               {rule.profileId && (
-                <p className="runcate text-sm leading-5 text-gray-300">
+                <p className="truncate text-sm leading-5 text-gray-300">
                   <span className="mr-2 font-bold">
                     {intl.formatMessage(messages.qualityprofile)}
                   </span>
@@ -236,10 +262,27 @@ const OverrideRuleTiles = ({
                       (r) =>
                         (r.id === rule.radarrServiceId &&
                           r.type === 'radarr') ||
-                        (r.id === rule.sonarrServiceId && r.type === 'sonarr')
+                        (r.id === rule.sonarrServiceId &&
+                          r.type === 'sonarr') ||
+                        (r.id === rule.readarrServiceId && r.type === 'readarr')
                     )
                     ?.profiles.find((profile) => rule.profileId === profile.id)
                     ?.name || rule.profileId}
+                </p>
+              )}
+              {rule.metadataProfileId && (
+                <p className="truncate text-sm leading-5 text-gray-300">
+                  <span className="mr-2 font-bold">
+                    {intl.formatMessage(messages.metadataprofile)}
+                  </span>
+                  {(
+                    testResponses.find(
+                      (r) =>
+                        r.id === rule.readarrServiceId && r.type === 'readarr'
+                    ) as ReadarrTestResponse
+                  )?.metadataProfiles?.find(
+                    (profile) => rule.metadataProfileId === profile.id
+                  )?.name || rule.metadataProfileId}
                 </p>
               )}
               {rule.rootFolder && (
@@ -264,7 +307,9 @@ const OverrideRuleTiles = ({
                               (r.id === rule.radarrServiceId &&
                                 r.type === 'radarr') ||
                               (r.id === rule.sonarrServiceId &&
-                                r.type === 'sonarr')
+                                r.type === 'sonarr') ||
+                              (r.id === rule.readarrServiceId &&
+                                r.type === 'readarr')
                           )
                           ?.tags?.find((t) => t.id === Number(tag))?.label ||
                           tag}

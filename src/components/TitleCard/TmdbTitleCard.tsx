@@ -1,5 +1,6 @@
 import TitleCard from '@app/components/TitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import { useInView } from 'react-intersection-observer';
@@ -9,14 +10,22 @@ export interface TmdbTitleCardProps {
   id: number;
   tmdbId: number;
   tvdbId?: number;
-  type: 'movie' | 'tv';
+  type: 'movie' | 'tv' | 'book';
   canExpand?: boolean;
   isAddedToWatchlist?: boolean;
   mutateParent?: () => void;
 }
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
+const isMovie = (
+  movie: MovieDetails | TvDetails | BookDetails
+): movie is MovieDetails => {
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  book: MovieDetails | TvDetails | BookDetails
+): book is BookDetails => {
+  return (book as BookDetails).author !== undefined;
 };
 
 const TmdbTitleCard = ({
@@ -34,8 +43,12 @@ const TmdbTitleCard = ({
     triggerOnce: true,
   });
   const url =
-    type === 'movie' ? `/api/v1/movie/${tmdbId}` : `/api/v1/tv/${tmdbId}`;
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
+    type === 'movie'
+      ? `/api/v1/movie/${tmdbId}`
+      : type === 'book'
+        ? `/api/v1/book/${tmdbId}`
+        : `/api/v1/tv/${tmdbId}`;
+  const { data: title, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     inView ? `${url}` : null
   );
 
@@ -75,6 +88,19 @@ const TmdbTitleCard = ({
       canExpand={canExpand}
       mutateParent={mutateParent}
     />
+  ) : isBook(title) ? (
+      <TitleCard
+        key={title.id}
+        id={title.id}
+        image={title.posterPath}
+        status={title.mediaInfo?.status}
+        summary={title.description}
+        title={title.title}
+        year={title.releaseDate}
+        mediaType={'book'}
+        canExpand={canExpand}
+        mutateParent={mutateParent}
+      />
   ) : (
     <TitleCard
       key={title.id}

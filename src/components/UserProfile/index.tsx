@@ -16,6 +16,7 @@ import type {
   UserRequestsResponse,
   UserWatchDataResponse,
 } from '@server/interfaces/api/userInterfaces';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import Link from 'next/link';
@@ -33,6 +34,7 @@ const messages = defineMessages('components.UserProfile', {
   pastdays: '{type} (past {days} days)',
   movierequests: 'Movie Requests',
   seriesrequest: 'Series Requests',
+  bookrequests: 'Book Requests',
   recentlywatched: 'Recently Watched',
   plexwatchlist: 'Plex Watchlist',
   localWatchlist: "{username}'s Watchlist",
@@ -40,7 +42,7 @@ const messages = defineMessages('components.UserProfile', {
     'Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.',
 });
 
-type MediaTitle = MovieDetails | TvDetails;
+type MediaTitle = MovieDetails | TvDetails | BookDetails;
 
 const UserProfile = () => {
   const intl = useIntl();
@@ -136,10 +138,7 @@ const UserProfile = () => {
             isDarker
             backgroundImages={Object.values(availableTitles)
               .filter((media) => media.backdropPath)
-              .map(
-                (media) =>
-                  `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
-              )
+              .map((media) => media.backdropPath ?? '')
               .slice(0, 6)}
           />
         </div>
@@ -269,6 +268,61 @@ const UserProfile = () => {
                               {intl.formatMessage(messages.limit, {
                                 remaining: quota.tv.remaining,
                                 limit: quota.tv.limit,
+                              })}
+                            </span>
+                          ),
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-semibold">
+                      {intl.formatMessage(messages.unlimited)}
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div
+                className={`overflow-hidden rounded-lg bg-gray-800 bg-opacity-50 px-4 py-5 shadow ring-1 ${
+                  quota.book.restricted
+                    ? 'bg-gradient-to-t from-red-900 to-transparent ring-red-500'
+                    : 'ring-gray-700'
+                } sm:p-6`}
+              >
+                <dt
+                  className={`truncate text-sm font-bold ${
+                    quota.book.restricted ? 'text-red-500' : 'text-gray-300'
+                  }`}
+                >
+                  {quota.book.limit
+                    ? intl.formatMessage(messages.pastdays, {
+                        type: intl.formatMessage(messages.bookrequests),
+                        days: quota?.book.days,
+                      })
+                    : intl.formatMessage(messages.bookrequests)}
+                </dt>
+                <dd
+                  className={`mt-1 flex items-center text-sm ${
+                    quota.book.restricted ? 'text-red-500' : 'text-white'
+                  }`}
+                >
+                  {quota.book.limit ? (
+                    <>
+                      <ProgressCircle
+                        progress={Math.round(
+                          ((quota?.book.remaining ?? 0) /
+                            (quota?.book.limit ?? 1)) *
+                            100
+                        )}
+                        useHeatLevel
+                        className="mr-2 h-8 w-8"
+                      />
+                      <div>
+                        {intl.formatMessage(messages.requestsperdays, {
+                          limit: (
+                            <span className="text-3xl font-semibold">
+                              {intl.formatMessage(messages.limit, {
+                                remaining: quota.book.remaining,
+                                limit: quota.book.limit,
                               })}
                             </span>
                           ),

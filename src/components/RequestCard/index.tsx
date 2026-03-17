@@ -25,6 +25,7 @@ import {
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -41,6 +42,7 @@ const messages = defineMessages('components.RequestCard', {
   mediaerror: '{mediaType} Not Found',
   tmdbid: 'TMDB ID',
   tvdbid: 'TheTVDB ID',
+  hcid: 'Hardcover ID',
   approverequest: 'Approve Request',
   declinerequest: 'Decline Request',
   editrequest: 'Edit Request',
@@ -49,8 +51,16 @@ const messages = defineMessages('components.RequestCard', {
   unknowntitle: 'Unknown Title',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
-  return (movie as MovieDetails).title !== undefined;
+const isMovie = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is MovieDetails => {
+  return (media as MovieDetails).title !== undefined && 'releaseDate' in media;
+};
+
+const isBook = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is BookDetails => {
+  return 'author' in media;
 };
 
 const RequestCardPlaceholder = () => {
@@ -111,7 +121,9 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
                   requestData?.type
                     ? requestData?.type === 'movie'
                       ? globalMessages.movie
-                      : globalMessages.tvshow
+                      : requestData?.type === 'book'
+                        ? globalMessages.book
+                        : globalMessages.tvshow
                     : globalMessages.request
                 ),
               })}
@@ -214,7 +226,10 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
 
 interface RequestCardProps {
   request: NonFunctionProperties<MediaRequest>;
-  onTitleData?: (requestId: number, title: MovieDetails | TvDetails) => void;
+  onTitleData?: (
+    requestId: number,
+    title: MovieDetails | TvDetails | BookDetails
+  ) => void;
 }
 
 const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
@@ -232,9 +247,11 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
-      : `/api/v1/tv/${request.media.tmdbId}`;
+      : request.type === 'book'
+        ? `/api/v1/book/${request.media.tmdbId}`
+        : `/api/v1/tv/${request.media.tmdbId}`;
 
-  const { data: title, error } = useSWR<MovieDetails | TvDetails>(
+  const { data: title, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     inView ? `${url}` : null
   );
   const {
@@ -353,9 +370,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         {title.backdropPath && (
           <div className="absolute inset-0 z-0">
             <CachedImage
-              type="tmdb"
+              type={request.type === 'book' ? 'hardcover' : 'tmdb'}
               alt=""
-              src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`}
+              src={title.backdropPath}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
             />
@@ -373,20 +390,27 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           data-testid="request-card-title"
         >
           <div className="hidden text-xs font-medium text-white sm:flex">
-            {(isMovie(title) ? title.releaseDate : title.firstAirDate)?.slice(
-              0,
-              4
-            )}
+            {isMovie(title)
+              ? title.releaseDate?.slice(0, 4)
+              : isBook(title)
+                ? title.releaseDate?.slice(0, 4)
+                : title.firstAirDate?.slice(0, 4)}
           </div>
           <Link
             href={
               request.type === 'movie'
                 ? `/movie/${requestData.media.tmdbId}`
-                : `/tv/${requestData.media.tmdbId}`
+                : request.type === 'book'
+                  ? `book/${requestData.media.tmdbId}`
+                  : `/tv/${requestData.media.tmdbId}`
             }
             className="overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold text-white hover:underline sm:text-lg"
           >
-            {isMovie(title) ? title.title : title.name}
+            {isMovie(title)
+              ? title.title
+              : isBook(title)
+                ? title.title
+                : title.name}
           </Link>
           {hasPermission(
             [Permission.MANAGE_REQUESTS, Permission.REQUEST_VIEW],
@@ -413,7 +437,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
               </Link>
             </div>
           )}
-          {!isMovie(title) && request.seasons.length > 0 && (
+          {!isMovie(title) && !isBook(title) && request.seasons.length > 0 && (
             <div className="my-0.5 hidden items-center text-sm sm:my-1 sm:flex">
               <span className="mr-2 font-bold">
                 {intl.formatMessage(messages.seasons, {
@@ -463,7 +487,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                   requestData.media[requestData.is4k ? 'status4k' : 'status']
                 }
                 downloadItem={requestDownloadStatus}
-                title={isMovie(title) ? title.title : title.name}
+                title={
+                  isMovie(title)
+                    ? title.title
+                    : isBook(title)
+                      ? title.title
+                      : title.name
+                }
                 inProgress={requestDownloadStatus.length > 0}
                 is4k={requestData.is4k}
                 tmdbId={requestData.media.tmdbId}
@@ -620,15 +650,17 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           href={
             request.type === 'movie'
               ? `/movie/${requestData.media.tmdbId}`
-              : `/tv/${requestData.media.tmdbId}`
+              : request.type === 'book'
+                ? `book/${requestData.media.tmdbId}`
+                : `/tv/${requestData.media.tmdbId}`
           }
           className="w-20 flex-shrink-0 scale-100 transform-gpu cursor-pointer overflow-hidden rounded-md shadow-sm transition duration-300 hover:scale-105 hover:shadow-md sm:w-28"
         >
           <CachedImage
-            type="tmdb"
+            type={request.type === 'book' ? 'hardcover' : 'tmdb'}
             src={
               title.posterPath
-                ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
+                ? title.posterPath
                 : '/images/seerr_poster_not_found.png'
             }
             alt=""
