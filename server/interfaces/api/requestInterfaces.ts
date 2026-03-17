@@ -5,6 +5,7 @@ import type { NonFunctionProperties, PaginatedResponse } from './common';
 export interface RequestResultsResponse extends PaginatedResponse {
   results: (NonFunctionProperties<MediaRequest> & {
     profileName?: string;
+    metadataProfileName?: string;
     canRemove?: boolean;
   })[];
   serviceErrors: {
@@ -21,6 +22,7 @@ export type MediaRequestBody = {
   is4k?: boolean;
   serverId?: number;
   profileId?: number;
+  metadataProfileId?: number;
   profileName?: string;
   rootFolder?: string;
   languageProfileId?: number;

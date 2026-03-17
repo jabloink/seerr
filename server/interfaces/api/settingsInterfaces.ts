@@ -36,6 +36,7 @@ export interface PublicSettingsResponse {
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
   series4kEnabled: boolean;
+  bookAudioEnabled: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
@@ -67,7 +68,10 @@ export interface CacheItem {
 
 export interface CacheResponse {
   apiCaches: CacheItem[];
-  imageCache: Record<'tmdb' | 'avatar', { size: number; imageCount: number }>;
+  imageCache: Record<
+    'tmdb' | 'avatar' | 'hardcover',
+    { size: number; imageCount: number }
+  >;
   dnsCache: {
     stats: DnsStats | undefined;
     entries: DnsEntries | undefined;
