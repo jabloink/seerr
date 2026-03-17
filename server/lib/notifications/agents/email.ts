@@ -123,12 +123,22 @@ class EmailAgent
       };
     }
 
+    const is4k = payload.request?.is4k;
+    const isBook = payload.media?.mediaType === MediaType.BOOK;
+    // Books reuse the is4k flag to mean "audiobook". Upstream encodes the 4K
+    // variant by suffixing " in 4K", which does not apply to audiobooks, so we
+    // fold the audiobook wording into the mediaType noun and never select the
+    // 4K message variant for books (see use4k below).
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
         ? intl.formatMessage(globalMessages.movie)
-        : intl.formatMessage(globalMessages.series)
+        : payload.media.mediaType === MediaType.BOOK
+          ? intl.formatMessage(
+              is4k ? globalMessages.audiobook : globalMessages.book
+            )
+          : intl.formatMessage(globalMessages.series)
       : undefined;
-    const is4k = payload.request?.is4k;
+    const use4k = is4k && !isBook;
 
     if (payload.request) {
       let body = '';
@@ -136,49 +146,51 @@ class EmailAgent
       switch (type) {
         case Notification.MEDIA_PENDING:
           body = intl.formatMessage(
-            is4k ? messages.pendingRequest4k : messages.pendingRequest,
+            use4k ? messages.pendingRequest4k : messages.pendingRequest,
             { mediaType }
           );
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
           body = intl.formatMessage(
-            is4k ? messages.autoRequested4k : messages.autoRequested,
+            use4k ? messages.autoRequested4k : messages.autoRequested,
             { mediaType }
           );
           break;
         case Notification.MEDIA_APPROVED:
           body = intl.formatMessage(
-            is4k ? messages.approvedRequest4k : messages.approvedRequest,
+            use4k ? messages.approvedRequest4k : messages.approvedRequest,
             { mediaType }
           );
           break;
         case Notification.MEDIA_AUTO_APPROVED:
           body = intl.formatMessage(
-            is4k ? messages.autoApproved4k : messages.autoApproved,
+            use4k ? messages.autoApproved4k : messages.autoApproved,
             { mediaType }
           );
           break;
         case Notification.MEDIA_AVAILABLE:
           body = intl.formatMessage(
-            is4k ? messages.availableRequest4k : messages.availableRequest,
+            use4k ? messages.availableRequest4k : messages.availableRequest,
             { mediaType }
           );
           break;
         case Notification.MEDIA_DECLINED:
           body = intl.formatMessage(
-            is4k ? messages.declinedRequest4k : messages.declinedRequest,
+            use4k ? messages.declinedRequest4k : messages.declinedRequest,
             { mediaType }
           );
           break;
         case Notification.MEDIA_FAILED:
           body = intl.formatMessage(
-            is4k ? messages.failedRequest4k : messages.failedRequest,
+            use4k ? messages.failedRequest4k : messages.failedRequest,
             {
               mediaType,
               service:
                 payload.media?.mediaType === MediaType.MOVIE
                   ? 'Radarr'
-                  : 'Sonarr',
+                  : payload.media?.mediaType === MediaType.BOOK
+                    ? 'Readarr'
+                    : 'Sonarr',
             }
           );
           break;
