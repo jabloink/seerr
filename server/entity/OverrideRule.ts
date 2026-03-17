@@ -17,6 +17,9 @@ class OverrideRule {
   @Column({ type: 'int', nullable: true })
   public sonarrServiceId?: number;
 
+  @Column({ type: 'int', nullable: true })
+  public readarrServiceId?: number;
+
   @Column({ nullable: true })
   public users?: string;
 
@@ -31,6 +34,9 @@ class OverrideRule {
 
   @Column({ type: 'int', nullable: true })
   public profileId?: number;
+
+  @Column({ type: 'int', nullable: true })
+  public metadataProfileId?: number;
 
   @Column({ nullable: true })
   public rootFolder?: string;
