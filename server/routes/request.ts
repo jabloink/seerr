@@ -1,4 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import ReadarrAPI from '@server/api/servarr/readarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import {
   MediaRequestStatus,
@@ -179,6 +180,11 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
             type: MediaType.TV,
           });
           break;
+        case 'book':
+          query = query.andWhere('request.type = :type', {
+            type: MediaType.BOOK,
+          });
+          break;
       }
 
       const [requests, requestCount] = await query
@@ -219,6 +225,24 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
         })
       );
 
+      // get all quality profiles for every configured readarr server
+      const readarrServers = await Promise.all(
+        settings.readarr.map(async (readarrSetting) => {
+          const readarr = new ReadarrAPI({
+            apiKey: readarrSetting.apiKey,
+            url: ReadarrAPI.buildUrl(readarrSetting, '/api/v1'),
+          });
+
+          return {
+            id: readarrSetting.id,
+            profiles: await readarr.getProfiles().catch(() => undefined),
+            metadataProfiles: await readarr
+              .getMetadataProfiles()
+              .catch(() => undefined),
+          };
+        })
+      );
+
       // add profile names to the media requests, with undefined if not found
       let mappedRequests = requests.map((r) => {
         switch (r.type) {
@@ -238,6 +262,20 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
               profileName: sonarrServers
                 .find((serverr) => serverr.id === r.serverId)
                 ?.profiles?.find((profile) => profile.id === r.profileId)?.name,
+            };
+          }
+          case MediaType.BOOK: {
+            return {
+              ...r,
+              profileName: readarrServers
+                .find((serverr) => serverr.id === r.serverId)
+                ?.profiles?.find((profile) => profile.id === r.profileId)?.name,
+              metadataProfileName: readarrServers
+                .find((serverr) => serverr.id === r.serverId)
+                ?.metadataProfiles?.find(
+                  (metadataProfile) =>
+                    metadataProfile.id === r.metadataProfileId
+                )?.name,
             };
           }
         }
@@ -267,6 +305,23 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
                     server.id ===
                     (r.is4k ? r.media.serviceId4k : r.media.serviceId)
                 ),
+              };
+            }
+            case MediaType.BOOK: {
+              return {
+                ...r,
+                // check if the readarr server for this request is configured
+                canRemove: readarrServers.some(
+                  (server) =>
+                    server.id ===
+                    (r.is4k ? r.media.serviceId4k : r.media.serviceId)
+                ),
+              };
+            }
+            default: {
+              return {
+                ...r,
+                canRemove: false,
               };
             }
           }
@@ -541,6 +596,26 @@ requestRoutes.put<{ requestId: string }>(
 
             request.serverId = req.body.serverId;
             request.profileId = req.body.profileId;
+            request.rootFolder = req.body.rootFolder;
+            request.tags = req.body.tags;
+            request.requestedBy = requestUser as User;
+
+            await requestRepository.save(request);
+          } else if (req.body.mediaType === MediaType.BOOK) {
+            if (ownerChanging && !request.ignoreQuota) {
+              const quotas = await requestUser.getQuota();
+
+              if (quotas.book.restricted) {
+                return next({
+                  status: 403,
+                  message: 'Book Quota exceeded.',
+                });
+              }
+            }
+
+            request.serverId = req.body.serverId;
+            request.profileId = req.body.profileId;
+            request.metadataProfileId = req.body.metadataProfileId;
             request.rootFolder = req.body.rootFolder;
             request.tags = req.body.tags;
             request.requestedBy = requestUser as User;

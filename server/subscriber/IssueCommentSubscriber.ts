@@ -1,3 +1,4 @@
+import Hardcover from '@server/api/hardcover';
 import TheMovieDb from '@server/api/themoviedb';
 import { IssueType, IssueTypeName } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
@@ -28,6 +29,7 @@ export class IssueCommentSubscriber implements EntitySubscriberInterface<IssueCo
     let title: string;
     let image: string;
     const tmdb = new TheMovieDb();
+    const hardcover = new Hardcover();
 
     try {
       const issue = (
@@ -52,6 +54,17 @@ export class IssueCommentSubscriber implements EntitySubscriberInterface<IssueCo
           movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
         }`;
         image = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${movie.poster_path}`;
+      } else if (media.mediaType === MediaType.BOOK) {
+        const book = await hardcover.getBook(media.tmdbId);
+
+        title = `${book.title}${
+          book.release_date ? ` (${book.release_date.slice(0, 4)})` : ''
+        }`;
+        image = book.image?.url
+          ? book.image.url
+          : `https://assets.hardcover.app/static/covers/cover${
+              (media.tmdbId % 9) + 1
+            }.png`;
       } else {
         const tvshow = await tmdb.getTvShow({ tvId: media.tmdbId });
 

@@ -92,7 +92,11 @@ blocklistRoutes.get(
   }),
   async (req, res, next) => {
     const mediaType = req.query.mediaType;
-    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+    if (
+      mediaType !== MediaType.MOVIE &&
+      mediaType !== MediaType.TV &&
+      mediaType !== MediaType.BOOK
+    ) {
       return next({
         status: 400,
         message: 'Invalid or missing mediaType query parameter.',
@@ -268,7 +272,11 @@ blocklistRoutes.delete(
   }),
   async (req, res, next) => {
     const mediaType = req.query.mediaType;
-    if (mediaType !== MediaType.MOVIE && mediaType !== MediaType.TV) {
+    if (
+      mediaType !== MediaType.MOVIE &&
+      mediaType !== MediaType.TV &&
+      mediaType !== MediaType.BOOK
+    ) {
       return next({
         status: 400,
         message: 'Invalid or missing mediaType query parameter.',

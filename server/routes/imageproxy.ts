@@ -1,6 +1,15 @@
 import ImageProxy from '@server/lib/imageproxy';
 import logger from '@server/logger';
 import { Router } from 'express';
+import sharp from 'sharp';
+
+const hardcoverTransform = async (buffer: Buffer) => ({
+  buffer: await sharp(buffer)
+    .resize(600, 900, { fit: 'cover' })
+    .webp({ quality: 80 })
+    .toBuffer(),
+  extension: 'webp',
+});
 
 const router = Router();
 
@@ -29,6 +38,23 @@ function initTvdbImageProxy() {
   }
   return _tvdbImageProxy;
 }
+let _hardcoverImageProxy: ImageProxy;
+function initHardcoverImageProxy() {
+  if (!_hardcoverImageProxy) {
+    _hardcoverImageProxy = new ImageProxy(
+      'hardcover',
+      'https://assets.hardcover.app',
+      {
+        rateLimitOptions: {
+          maxRequests: 20,
+          maxRPS: 50,
+        },
+        transform: hardcoverTransform,
+      }
+    );
+  }
+  return _hardcoverImageProxy;
+}
 
 router.get<{
   type: string;
@@ -47,6 +73,8 @@ router.get<{
       imageData = await initTmdbImageProxy().getImage(imagePath);
     } else if (req.params.type === 'tvdb') {
       imageData = await initTvdbImageProxy().getImage(imagePath);
+    } else if (req.params.type === 'hardcover') {
+      imageData = await initHardcoverImageProxy().getImage(imagePath);
     } else {
       logger.error('Unsupported image type', {
         imagePath,
