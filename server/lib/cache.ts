@@ -1,10 +1,12 @@
 import { LRUCache } from 'lru-cache';
 
 export type AvailableCacheIds =
+  | 'hardcover'
   | 'tmdb'
   | 'tmdbscan'
   | 'radarr'
   | 'sonarr'
+  | 'readarr'
   | 'rt'
   | 'imdb'
   | 'github'
@@ -28,6 +30,7 @@ const TMDB_SCAN_MAX_KEYS = 2000;
 // these tiers, and keys are prefixed by server url, so this is a few keys per server.
 const RADARR_MAX_KEYS = 64;
 const SONARR_MAX_KEYS = 64;
+const READARR_MAX_KEYS = 64;
 
 // One key per searched title, each holding twenty search hits.
 const RT_MAX_KEYS = 500;
@@ -47,6 +50,8 @@ const PLEX_WATCHLIST_MAX_KEYS = 500;
 // Several keys per show, holding the largest payloads of any tier as the extended
 // series lookup carries every episode.
 const TVDB_MAX_KEYS = 500;
+
+const HARDCOVER_MAX_KEYS = 1000;
 
 export interface CacheStats {
   hits: number;
@@ -227,6 +232,7 @@ class CacheManager {
     }),
     radarr: new Cache('radarr', 'Radarr API', { max: RADARR_MAX_KEYS }),
     sonarr: new Cache('sonarr', 'Sonarr API', { max: SONARR_MAX_KEYS }),
+    readarr: new Cache('readarr', 'Readarr API', { max: READARR_MAX_KEYS }),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,
       max: RT_MAX_KEYS,
@@ -249,6 +255,10 @@ class CacheManager {
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
       max: TVDB_MAX_KEYS,
+    }),
+    hardcover: new Cache('hardcover', 'Hardcover API', {
+      stdTtl: 21600,
+      max: HARDCOVER_MAX_KEYS,
     }),
   };
 
