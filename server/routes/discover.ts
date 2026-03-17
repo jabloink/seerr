@@ -1,3 +1,4 @@
+import Hardcover from '@server/api/hardcover';
 import PlexTvAPI from '@server/api/plextv';
 import TheMovieDb, {
   MovieSortOptionsIterable,
@@ -17,6 +18,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
 import {
+  mapBookResult,
   mapCollectionResult,
   mapMovieResult,
   mapPersonResult,
@@ -100,6 +102,50 @@ const TvApiQuerySchema = QueryFilterOptions.omit({
   certificationMode: true,
 }).extend({
   sortBy: z.enum(TvSortOptionsIterable).optional().catch(undefined),
+});
+
+discoverRoutes.get('/books', async (req, res, next) => {
+  const hardcover = new Hardcover();
+
+  try {
+    const query = QueryFilterOptions.parse(req.query);
+    const data = await hardcover.getDiscoverBooks({
+      page: Number(query.page),
+    });
+
+    const media = await Media.getRelatedMedia(
+      req.user,
+      data.data.books.map((result) => ({
+        tmdbId: result.id,
+        mediaType: MediaType.BOOK,
+      })),
+      { includeActiveRequest: true }
+    );
+
+    return res.status(200).json({
+      page: data.page,
+      totalPages: data.total_pages,
+      totalResults: data.total_results,
+      keywords: undefined,
+      results: data.data.books.map((result) =>
+        mapBookResult(
+          result,
+          media.find(
+            (req) => req.tmdbId === result.id && req.mediaType === MediaType.BOOK
+          )
+        )
+      ),
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving popular books', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve popular books.',
+    });
+  }
 });
 
 discoverRoutes.get('/movies', async (req, res, next) => {

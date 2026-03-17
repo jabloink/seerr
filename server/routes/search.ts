@@ -1,3 +1,5 @@
+import Hardcover from '@server/api/hardcover';
+import type { HardcoverSearchMultiResponse } from '@server/api/hardcover/interfaces';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
@@ -11,7 +13,7 @@ const searchRoutes = Router();
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
   const searchProvider = findSearchProvider(queryString.toLowerCase());
-  let results: TmdbSearchMultiResponse;
+  let results: TmdbSearchMultiResponse | HardcoverSearchMultiResponse;
 
   try {
     if (searchProvider) {
@@ -22,6 +24,13 @@ searchRoutes.get('/', async (req, res, next) => {
         id,
         language: (req.query.language as string) ?? req.locale,
         query: queryString,
+      });
+    } else if (req.query.type === 'hardcover') {
+      const hardcover = new Hardcover();
+
+      results = await hardcover.search({
+        query: queryString,
+        page: Number(req.query.page),
       });
     } else {
       const tmdb = new TheMovieDb();

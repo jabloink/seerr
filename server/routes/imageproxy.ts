@@ -2,6 +2,15 @@ import ImageProxy from '@server/lib/imageproxy';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { Router } from 'express';
+import sharp from 'sharp';
+
+const hardcoverTransform = async (buffer: Buffer) => ({
+  buffer: await sharp(buffer)
+    .resize(600, 900, { fit: 'cover' })
+    .webp({ quality: 80 })
+    .toBuffer(),
+  extension: 'webp',
+});
 
 const router = Router();
 
@@ -12,6 +21,9 @@ const isAllowedSegment = (segment: string) =>
   segment !== '..' &&
   (/^[\w.-]+$/.test(segment) ||
     /^w\d+_filter\(duotone,[\da-f]{6},[\da-f]{6}\)$/i.test(segment));
+
+const isAllowedHardcoverSegment = (segment: string) =>
+  segment !== '.' && segment !== '..' && /^[\w .,()-]+$/.test(segment);
 
 // Delay the initialization of ImageProxy instances until the proxy (if any) is properly configured
 let _tmdbImageProxy: ImageProxy;
@@ -40,12 +52,30 @@ function initTvdbImageProxy() {
   }
   return _tvdbImageProxy;
 }
+let _hardcoverImageProxy: ImageProxy;
+function initHardcoverImageProxy() {
+  if (!_hardcoverImageProxy) {
+    _hardcoverImageProxy = new ImageProxy(
+      'hardcover',
+      'https://assets.hardcover.app',
+      {
+        rateLimitOptions: {
+          maxRequests: 20,
+          maxRPS: 50,
+        },
+        transform: hardcoverTransform,
+        maxCacheSize: MAX_CACHE_SIZE,
+      }
+    );
+  }
+  return _hardcoverImageProxy;
+}
 
 router.get<{
   type: string;
   path: string[];
 }>('/:type/*path', async (req, res, next) => {
-  if (!getSettings().main.cacheImages) {
+  if (!getSettings().main.cacheImages && req.params.type !== 'hardcover') {
     return next({ status: 404, message: 'Image caching is disabled.' });
   }
 
@@ -58,7 +88,13 @@ router.get<{
 
   const segments = joinedPath.split('/').filter((segment) => segment !== '');
 
-  if (!segments.every(isAllowedSegment)) {
+  if (
+    !segments.every(
+      req.params.type === 'hardcover'
+        ? isAllowedHardcoverSegment
+        : isAllowedSegment
+    )
+  ) {
     return next({ status: 400, message: 'Invalid image path.' });
   }
 
@@ -70,6 +106,8 @@ router.get<{
       imageData = await initTmdbImageProxy().getImage(imagePath);
     } else if (req.params.type === 'tvdb') {
       imageData = await initTvdbImageProxy().getImage(imagePath);
+    } else if (req.params.type === 'hardcover') {
+      imageData = await initHardcoverImageProxy().getImage(imagePath);
     } else {
       logger.error('Unsupported image type', {
         imagePath,

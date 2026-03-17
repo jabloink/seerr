@@ -1,3 +1,5 @@
+import Hardcover from '@server/api/hardcover';
+import type { HardcoverBookDetails } from '@server/api/hardcover/interfaces';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbMovieDetails,
@@ -44,10 +46,12 @@ overrideRuleRoutes.post<
     language?: string;
     keywords?: string;
     profileId?: number;
+    metadataProfileId?: number;
     rootFolder?: string;
     tags?: string;
     radarrServiceId?: number;
     sonarrServiceId?: number;
+    readarrServiceId?: number;
   }
 >('/', isAuthenticated(Permission.ADMIN), async (req, res, next) => {
   const overrideRuleRepository = getRepository(OverrideRule);
@@ -59,10 +63,12 @@ overrideRuleRoutes.post<
       language: req.body.language,
       keywords: req.body.keywords,
       profileId: req.body.profileId,
+      metadataProfileId: req.body.metadataProfileId,
       rootFolder: req.body.rootFolder,
       tags: req.body.tags,
       radarrServiceId: req.body.radarrServiceId,
       sonarrServiceId: req.body.sonarrServiceId,
+      readarrServiceId: req.body.readarrServiceId,
     });
 
     const newRule = await overrideRuleRepository.save(rule);
@@ -93,12 +99,15 @@ overrideRuleRoutes.post<
   async (req, res, next) => {
     try {
       const tmdb = new TheMovieDb();
-      let tmdbMedia: TmdbMovieDetails | TmdbTvDetails;
+      const hardcover = new Hardcover();
+      let tmdbMedia: TmdbMovieDetails | TmdbTvDetails | HardcoverBookDetails;
       try {
         tmdbMedia =
           req.body.mediaType === MediaType.MOVIE
             ? await tmdb.getMovie({ movieId: req.body.tmdbId })
-            : await tmdb.getTvShow({ tvId: req.body.tmdbId });
+            : req.body.mediaType === MediaType.BOOK
+              ? await hardcover.getBook(req.body.tmdbId)
+              : await tmdb.getTvShow({ tvId: req.body.tmdbId });
       } catch {
         return next({ status: 404, message: 'Media not found' });
       }
@@ -203,10 +212,12 @@ overrideRuleRoutes.put<
     language?: string;
     keywords?: string;
     profileId?: number;
+    metadataProfileId?: number;
     rootFolder?: string;
     tags?: string;
     radarrServiceId?: number;
     sonarrServiceId?: number;
+    readarrServiceId?: number;
   }
 >('/:ruleId', isAuthenticated(Permission.ADMIN), async (req, res, next) => {
   const overrideRuleRepository = getRepository(OverrideRule);
@@ -227,10 +238,12 @@ overrideRuleRoutes.put<
     rule.language = req.body.language;
     rule.keywords = req.body.keywords;
     rule.profileId = req.body.profileId;
+    rule.metadataProfileId = req.body.metadataProfileId;
     rule.rootFolder = req.body.rootFolder;
     rule.tags = req.body.tags;
     rule.radarrServiceId = req.body.radarrServiceId;
     rule.sonarrServiceId = req.body.sonarrServiceId;
+    rule.readarrServiceId = req.body.readarrServiceId;
 
     const newRule = await overrideRuleRepository.save(rule);
 
