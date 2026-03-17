@@ -1,4 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import ReadarrAPI from '@server/api/servarr/readarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import {
   MediaRequestStatus,
@@ -370,6 +371,37 @@ class Media {
         }
       }
     }
+
+    if (this.mediaType === MediaType.BOOK) {
+      if (this.serviceId !== null && this.externalServiceSlug !== null) {
+        const settings = getSettings();
+        const server = settings.readarr.find(
+          (readarr) => readarr.id === this.serviceId
+        );
+
+        if (server) {
+          this.serviceUrl = server.externalUrl
+            ? `${server.externalUrl}/book/${this.externalServiceSlug}`
+            : ReadarrAPI.buildUrl(server, `/book/${this.externalServiceSlug}`);
+        }
+      }
+
+      if (this.serviceId4k !== null && this.externalServiceSlug4k !== null) {
+        const settings = getSettings();
+        const server = settings.readarr.find(
+          (readarr) => readarr.id === this.serviceId4k
+        );
+
+        if (server) {
+          this.serviceUrl4k = server.externalUrl
+            ? `${server.externalUrl}/book/${this.externalServiceSlug4k}`
+            : ReadarrAPI.buildUrl(
+                server,
+                `/book/${this.externalServiceSlug4k}`
+              );
+        }
+      }
+    }
   }
 
   @AfterLoad()
@@ -420,6 +452,32 @@ class Media {
         this.serviceId4k !== null
       ) {
         this.downloadStatus4k = downloadTracker.getSeriesProgress(
+          this.serviceId4k,
+          this.externalServiceId4k
+        );
+      }
+    }
+
+    if (this.mediaType === MediaType.BOOK) {
+      if (
+        this.externalServiceId !== undefined &&
+        this.externalServiceId !== null &&
+        this.serviceId !== undefined &&
+        this.serviceId !== null
+      ) {
+        this.downloadStatus = downloadTracker.getBookProgress(
+          this.serviceId,
+          this.externalServiceId
+        );
+      }
+
+      if (
+        this.externalServiceId4k !== undefined &&
+        this.externalServiceId4k !== null &&
+        this.serviceId4k !== undefined &&
+        this.serviceId4k !== null
+      ) {
+        this.downloadStatus4k = downloadTracker.getBookProgress(
           this.serviceId4k,
           this.externalServiceId4k
         );
