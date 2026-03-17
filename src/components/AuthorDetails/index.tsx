@@ -1,5 +1,6 @@
 import Ellipsis from '@app/assets/ellipsis.svg';
 import CachedImage from '@app/components/Common/CachedImage';
+import HardcoverSetup from '@app/components/Common/HardcoverSetup';
 import ImageFader from '@app/components/Common/ImageFader';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -28,6 +29,10 @@ const AuthorDetails = () => {
 
   if (!data && !error) {
     return <LoadingSpinner />;
+  }
+
+  if ((error as any)?.response?.status === 503) {
+    return <HardcoverSetup />;
   }
 
   if (!data) {

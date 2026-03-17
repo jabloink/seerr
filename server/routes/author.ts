@@ -2,6 +2,7 @@ import Hardcover from '@server/api/hardcover';
 import type { HardcoverAuthorDetails } from '@server/api/hardcover/interfaces';
 import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapAuthorDetails } from '@server/models/Author';
 import { mapBookResult } from '@server/models/Search';
@@ -10,6 +11,13 @@ import { Router } from 'express';
 const authorRoutes = Router();
 
 authorRoutes.get('/:id', async (req, res, next) => {
+  if (!getSettings().main.hardcoverapikey) {
+    return next({
+      status: 503,
+      message: 'Hardcover API key is not configured.',
+    });
+  }
+
   const hardcover = new Hardcover();
 
   try {

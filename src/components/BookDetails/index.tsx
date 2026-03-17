@@ -3,6 +3,7 @@ import AuthorCard from '@app/components/AuthorCard';
 import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
+import HardcoverSetup from '@app/components/Common/HardcoverSetup';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tag from '@app/components/Common/Tag';
@@ -110,6 +111,10 @@ const BookDetails = ({ book }: BookDetailsProps) => {
 
   if (!data && !error) {
     return <LoadingSpinner />;
+  }
+
+  if ((error as any)?.response?.status === 503) {
+    return <HardcoverSetup />;
   }
 
   if (!data) {

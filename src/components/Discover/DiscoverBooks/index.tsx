@@ -1,3 +1,4 @@
+import HardcoverSetup from '@app/components/Common/HardcoverSetup';
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -32,6 +33,10 @@ const DiscoverBooks = () => {
     '/api/v1/discover/books',
     preparedFilters
   );
+
+  if ((error as any)?.response?.status === 503) {
+    return <HardcoverSetup />;
+  }
 
   if (error) {
     return <Error statusCode={500} />;
