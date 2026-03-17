@@ -84,6 +84,12 @@ settingsRoutes.get('/main', (req, res, next) => {
 settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
 
+  if (req.body.hardcoverapikey) {
+    req.body.hardcoverapikey = req.body.hardcoverapikey
+      .trim()
+      .replace(/^Bearer\s+/i, '');
+  }
+
   if (
     req.body.hardcoverapikey &&
     req.body.hardcoverapikey !== settings.main.hardcoverapikey
