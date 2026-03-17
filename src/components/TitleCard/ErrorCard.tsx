@@ -11,7 +11,7 @@ interface ErrorCardProps {
   id: number;
   tmdbId: number;
   tvdbId?: number;
-  type: 'movie' | 'tv';
+  type: 'movie' | 'tv' | 'book';
   canExpand?: boolean;
 }
 
@@ -19,6 +19,7 @@ const messages = defineMessages('components.TitleCard', {
   mediaerror: '{mediaType} Not Found',
   tmdbid: 'TMDB ID',
   tvdbid: 'TheTVDB ID',
+  hcid: 'Hardcover ID',
   cleardata: 'Clear Data',
 });
 
@@ -65,13 +66,19 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
             <div
               className={`pointer-events-none z-40 rounded-full shadow ${
-                type === 'movie' ? 'bg-blue-500' : 'bg-purple-600'
+                type === 'movie'
+                  ? 'bg-blue-500'
+                  : type === 'book'
+                    ? 'bg-green-600'
+                    : 'bg-purple-600'
               }`}
             >
               <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
                 {type === 'movie'
                   ? intl.formatMessage(globalMessages.movie)
-                  : intl.formatMessage(globalMessages.tvshow)}
+                  : type === 'book'
+                    ? intl.formatMessage(globalMessages.book)
+                    : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
             <div className="pointer-events-none z-40">
@@ -98,7 +105,9 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
                   mediaType: intl.formatMessage(
                     type === 'movie'
                       ? globalMessages.movie
-                      : globalMessages.tvshow
+                      : type === 'book'
+                        ? globalMessages.book
+                        : globalMessages.tvshow
                   ),
                 })}
               </h1>
@@ -114,7 +123,7 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
               >
                 <div className="flex items-center">
                   <span className="mr-2 font-bold text-gray-400">
-                    {intl.formatMessage(messages.tmdbid)}
+                    {intl.formatMessage(type === 'book' ? messages.hcid : messages.tmdbid)}
                   </span>
                   {tmdbId}
                 </div>

@@ -447,7 +447,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           <CachedImage
             type="tmdb"
             alt=""
-            src={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`}
+            src={data.backdropPath}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
             priority

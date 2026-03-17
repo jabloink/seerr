@@ -48,7 +48,7 @@ const classNames = (...classes: string[]) => {
 };
 
 interface CreateIssueModalProps {
-  mediaType: 'movie' | 'tv';
+  mediaType: 'movie' | 'tv' | 'book';
   tmdbId?: number;
   onCancel?: () => void;
 }
@@ -157,7 +157,8 @@ const CreateIssueModal = ({
             onOk={() => handleSubmit()}
             okText={intl.formatMessage(messages.submitissue)}
             loading={!data && !error}
-            backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+            backdrop={data?.backdropPath}
+            cache={mediaType === 'book' ? 'hardcover' : 'tmdb'}
           >
             {mediaType === 'tv' && data && !isMovie(data) && (
               <>

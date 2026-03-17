@@ -1,5 +1,7 @@
+import BookRequestModal from '@app/components/RequestModal/BookRequestModal';
 import CollectionRequestModal from '@app/components/RequestModal/CollectionRequestModal';
 import MovieRequestModal from '@app/components/RequestModal/MovieRequestModal';
+import SeriesRequestModal from '@app/components/RequestModal/SeriesRequestModal';
 import TvRequestModal from '@app/components/RequestModal/TvRequestModal';
 import { Transition } from '@headlessui/react';
 import type { MediaStatus } from '@server/constants/media';
@@ -8,7 +10,7 @@ import type { NonFunctionProperties } from '@server/interfaces/api/common';
 
 interface RequestModalProps {
   show: boolean;
-  type: 'movie' | 'tv' | 'collection';
+  type: 'movie' | 'tv' | 'book' | 'collection' | 'series';
   tmdbId: number;
   is4k?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
@@ -55,6 +57,23 @@ const RequestModal = ({
           onUpdating={onUpdating}
           is4k={is4k}
           editRequest={editRequest}
+        />
+      ) : type === 'book' ? (
+        <BookRequestModal
+          onComplete={onComplete}
+          onCancel={onCancel}
+          hcId={tmdbId}
+          onUpdating={onUpdating}
+          isAudio={is4k}
+          editRequest={editRequest}
+        />
+      ) : type === 'series' ? (
+        <SeriesRequestModal
+          onComplete={onComplete}
+          onCancel={onCancel}
+          seriesId={tmdbId}
+          onUpdating={onUpdating}
+          isAudio={is4k}
         />
       ) : (
         <CollectionRequestModal

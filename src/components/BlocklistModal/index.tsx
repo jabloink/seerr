@@ -2,7 +2,7 @@ import Modal from '@app/components/Common/Modal';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
-
+import type { BookDetails } from '@server/models/Book';
 import type { Collection } from '@server/models/Collection';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
@@ -12,7 +12,7 @@ import { useIntl } from 'react-intl';
 
 interface BlocklistModalProps {
   tmdbId: number;
-  type: 'movie' | 'tv' | 'collection';
+  type: 'movie' | 'tv' | 'collection' | 'book';
   show: boolean;
   onComplete?: () => void;
   onCancel?: () => void;
@@ -24,7 +24,7 @@ const messages = defineMessages('component.BlocklistModal', {
 });
 
 const isCollection = (
-  data: MovieDetails | TvDetails | Collection | null
+  data: MovieDetails | TvDetails | Collection | BookDetails | null
 ): data is Collection => {
   return (
     data !== null &&
@@ -34,10 +34,17 @@ const isCollection = (
 };
 
 const isMovie = (
-  movie: MovieDetails | TvDetails | Collection | null
+  movie: MovieDetails | TvDetails | Collection | BookDetails | null
 ): movie is MovieDetails => {
   if (!movie) return false;
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  item: MovieDetails | TvDetails | Collection | BookDetails | null
+): item is BookDetails => {
+  if (!item) return false;
+  return (item as BookDetails).id !== undefined && 'author' in item;
 };
 
 const BlocklistModal = ({
@@ -50,7 +57,7 @@ const BlocklistModal = ({
 }: BlocklistModalProps) => {
   const intl = useIntl();
   const [data, setData] = useState<
-    TvDetails | MovieDetails | Collection | null
+    TvDetails | MovieDetails | Collection | BookDetails | null
   >(null);
   const [error, setError] = useState(null);
 
@@ -84,16 +91,20 @@ const BlocklistModal = ({
         title={`${intl.formatMessage(globalMessages.blocklist)} ${
           type === 'collection'
             ? intl.formatMessage(globalMessages.collection)
-            : isMovie(data)
-              ? intl.formatMessage(globalMessages.movie)
-              : intl.formatMessage(globalMessages.tvshow)
+            : type === 'book'
+              ? intl.formatMessage(globalMessages.book)
+              : isMovie(data)
+                ? intl.formatMessage(globalMessages.movie)
+                : intl.formatMessage(globalMessages.tvshow)
         }`}
         subTitle={`${
           isCollection(data)
             ? data.name
             : isMovie(data)
               ? data.title
-              : data?.name
+              : isBook(data)
+                ? data.title
+                : data?.name
         }`}
         onCancel={onCancel}
         onOk={onComplete}
@@ -104,7 +115,8 @@ const BlocklistModal = ({
         }
         okButtonType="danger"
         okDisabled={isUpdating}
-        backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
+        backdrop={data?.backdropPath}
+        cache={type === 'book' ? 'hardcover' : 'tmdb'}
       />
     </Transition>
   );
