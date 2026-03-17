@@ -1,5 +1,7 @@
 import SeriesDetails from '@app/components/SeriesDetails';
+import { getHostAndPort } from '@app/utils/urlHelper';
 import type { Series } from '@server/models/Series';
+import axios from 'axios';
 import type { GetServerSideProps, NextPage } from 'next';
 
 interface SeriesPageProps {
@@ -13,24 +15,24 @@ const SeriesPage: NextPage<SeriesPageProps> = ({ series }) => {
 export const getServerSideProps: GetServerSideProps<SeriesPageProps> = async (
   ctx
 ) => {
-  const res = await fetch(
-    `http://localhost:${process.env.PORT || 5055}/api/v1/series/${
-      ctx.query.seriesId
-    }`,
-    {
-      headers: ctx.req?.headers?.cookie
-        ? { cookie: ctx.req.headers.cookie }
-        : undefined,
-    }
-  );
-  if (!res.ok) throw new Error();
-  const series: Series = await res.json();
+  try {
+    const response = await axios.get<Series>(
+      `http://${getHostAndPort()}/api/v1/series/${ctx.query.seriesId}`,
+      {
+        headers: ctx.req?.headers?.cookie
+          ? { cookie: ctx.req.headers.cookie }
+          : undefined,
+      }
+    );
 
-  return {
-    props: {
-      series,
-    },
-  };
+    return {
+      props: {
+        series: response.data,
+      },
+    };
+  } catch {
+    return { props: {} };
+  }
 };
 
 export default SeriesPage;

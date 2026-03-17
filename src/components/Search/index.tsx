@@ -1,3 +1,4 @@
+import HardcoverSetup from '@app/components/Common/HardcoverSetup';
 import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
@@ -41,6 +42,10 @@ const Search = () => {
     },
     { hideAvailable: false, hideBlocklisted: false, hideRequested: false }
   );
+
+  if ((error as any)?.response?.status === 503) {
+    return <HardcoverSetup />;
+  }
 
   if (error) {
     return <ErrorPage statusCode={500} />;

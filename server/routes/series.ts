@@ -1,6 +1,7 @@
 import Hardcover from '@server/api/hardcover';
 import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapSeries } from '@server/models/Series';
 import { Router } from 'express';
@@ -8,6 +9,13 @@ import { Router } from 'express';
 const seriesRoutes = Router();
 
 seriesRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
+  if (!getSettings().main.hardcoverapikey) {
+    return next({
+      status: 503,
+      message: 'Hardcover API key is not configured.',
+    });
+  }
+
   const hardcover = new Hardcover();
 
   try {
