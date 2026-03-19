@@ -780,7 +780,9 @@ const ManageSlideOver = ({
                       {intl.formatMessage(
                         mediaType === 'movie'
                           ? messages.markavailable
-                          : messages.markallseasonsavailable
+                          : mediaType === 'book'
+                            ? messages.markavailable
+                            : messages.markallseasonsavailable
                       )}
                     </span>
                   </Button>
