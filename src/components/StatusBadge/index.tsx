@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 const messages = defineMessages('components.StatusBadge', {
   status: '{status}',
   status4k: '4K {status}',
+  statusAudiobook: 'Audiobook {status}',
   playonplex: 'Play on {mediaServerName}',
   openinarr: 'Open in {arr}',
   managemedia: 'Manage {mediaType}',
@@ -190,7 +191,11 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  is4k
+                    ? mediaType === 'book'
+                      ? messages.statusAudiobook
+                      : messages.status4k
+                    : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -255,7 +260,11 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  is4k
+                    ? mediaType === 'book'
+                      ? messages.statusAudiobook
+                      : messages.status4k
+                    : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -320,7 +329,11 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  is4k
+                    ? mediaType === 'book'
+                      ? messages.statusAudiobook
+                      : messages.status4k
+                    : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
@@ -363,9 +376,16 @@ const StatusBadge = ({
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="warning" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status: intl.formatMessage(globalMessages.pending),
-            })}
+            {intl.formatMessage(
+              is4k
+                ? mediaType === 'book'
+                  ? messages.statusAudiobook
+                  : messages.status4k
+                : messages.status,
+              {
+                status: intl.formatMessage(globalMessages.pending),
+              }
+            )}
           </Badge>
         </Tooltip>
       );
@@ -374,11 +394,18 @@ const StatusBadge = ({
       return (
         <Tooltip content={mediaLinkDescription}>
           <Badge badgeType="danger" href={mediaLink}>
-            {intl.formatMessage(is4k ? messages.status4k : messages.status, {
-              status:
-                statusLabelOverride ??
-                intl.formatMessage(globalMessages.blocklisted),
-            })}
+            {intl.formatMessage(
+              is4k
+                ? mediaType === 'book'
+                  ? messages.statusAudiobook
+                  : messages.status4k
+                : messages.status,
+              {
+                status:
+                  statusLabelOverride ??
+                  intl.formatMessage(globalMessages.blocklisted),
+              }
+            )}
           </Badge>
         </Tooltip>
       );
@@ -409,7 +436,11 @@ const StatusBadge = ({
             >
               <span>
                 {intl.formatMessage(
-                  is4k ? messages.status4k : messages.status,
+                  is4k
+                    ? mediaType === 'book'
+                      ? messages.statusAudiobook
+                      : messages.status4k
+                    : messages.status,
                   {
                     status: inProgress
                       ? intl.formatMessage(globalMessages.processing)
