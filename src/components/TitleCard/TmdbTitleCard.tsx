@@ -71,7 +71,20 @@ const TmdbTitleCard = ({
     ) : null;
   }
 
-  return isMovie(title) ? (
+  return isBook(title) ? (
+    <TitleCard
+      key={title.id}
+      id={title.id}
+      image={title.posterPath}
+      status={title.mediaInfo?.status}
+      summary={title.description}
+      title={title.title}
+      year={title.releaseDate}
+      mediaType={'book'}
+      canExpand={canExpand}
+      mutateParent={mutateParent}
+    />
+  ) : isMovie(title) ? (
     <TitleCard
       key={title.id}
       id={title.id}
@@ -88,19 +101,6 @@ const TmdbTitleCard = ({
       canExpand={canExpand}
       mutateParent={mutateParent}
     />
-  ) : isBook(title) ? (
-      <TitleCard
-        key={title.id}
-        id={title.id}
-        image={title.posterPath}
-        status={title.mediaInfo?.status}
-        summary={title.description}
-        title={title.title}
-        year={title.releaseDate}
-        mediaType={'book'}
-        canExpand={canExpand}
-        mutateParent={mutateParent}
-      />
   ) : (
     <TitleCard
       key={title.id}
