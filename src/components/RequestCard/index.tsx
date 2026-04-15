@@ -660,7 +660,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             type={request.type === 'book' ? 'hardcover' : 'tmdb'}
             src={
               title.posterPath
-                ? title.posterPath
+                ? request.type === 'book'
+                  ? title.posterPath
+                  : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
                 : '/images/seerr_poster_not_found.png'
             }
             alt=""

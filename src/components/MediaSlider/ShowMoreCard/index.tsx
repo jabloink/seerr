@@ -60,24 +60,69 @@ const ShowMoreCard = ({ url, posters }: ShowMoreCardProps) => {
         <div style={{ paddingBottom: '150%' }}>
           <div className="absolute inset-0 flex h-full w-full flex-col items-center p-2">
             <div className="relative z-10 grid h-full w-full grid-cols-2 items-center justify-center gap-2 opacity-30">
-              {posters.map(
-                (poster) =>
-                  poster.url && (
-                    <div className="">
-                      <CachedImage
-                        type={poster.cache}
-                        src={
-                          poster.cache === 'hardcover'
-                            ? poster.url
-                            : `https://image.tmdb.org/t/p/w300_and_h450_face${poster.url}`
-                        }
-                        alt=""
-                        className="rounded-md"
-                        width={300}
-                        height={450}
-                      />
-                    </div>
-                  )
+              {posters[0]?.url && (
+                <div className="">
+                  <CachedImage
+                    type={posters[0].cache}
+                    src={
+                      posters[0].cache === 'hardcover'
+                        ? posters[0].url
+                        : `https://image.tmdb.org/t/p/w300_and_h450_face${posters[0].url}`
+                    }
+                    alt=""
+                    className="rounded-md"
+                    width={300}
+                    height={450}
+                  />
+                </div>
+              )}
+              {posters[1]?.url && (
+                <div className="">
+                  <CachedImage
+                    type={posters[1].cache}
+                    src={
+                      posters[1].cache === 'hardcover'
+                        ? posters[1].url
+                        : `https://image.tmdb.org/t/p/w300_and_h450_face${posters[1].url}`
+                    }
+                    alt=""
+                    className="rounded-md"
+                    width={300}
+                    height={450}
+                  />
+                </div>
+              )}
+              {posters[2]?.url && (
+                <div className="">
+                  <CachedImage
+                    type={posters[2].cache}
+                    src={
+                      posters[2].cache === 'hardcover'
+                        ? posters[2].url
+                        : `https://image.tmdb.org/t/p/w300_and_h450_face${posters[2].url}`
+                    }
+                    alt=""
+                    className="rounded-md"
+                    width={300}
+                    height={450}
+                  />
+                </div>
+              )}
+              {posters[3]?.url && (
+                <div className="">
+                  <CachedImage
+                    type={posters[3].cache}
+                    src={
+                      posters[3].cache === 'hardcover'
+                        ? posters[3].url
+                        : `https://image.tmdb.org/t/p/w300_and_h450_face${posters[3].url}`
+                    }
+                    alt=""
+                    className="rounded-md"
+                    width={300}
+                    height={450}
+                  />
+                </div>
               )}
             </div>
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white">

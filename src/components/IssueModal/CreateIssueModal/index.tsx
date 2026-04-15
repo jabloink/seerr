@@ -10,6 +10,7 @@ import { Label, Radio, RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
+import type { BookDetails } from '@server/models/Book';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
@@ -39,8 +40,18 @@ const messages = defineMessages('components.IssueModal.CreateIssueModal', {
   submitissue: 'Submit Issue',
 });
 
-const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
+const isMovie = (
+  movie: MovieDetails | TvDetails | BookDetails | null
+): movie is MovieDetails => {
+  if (!movie) return false;
   return (movie as MovieDetails).title !== undefined;
+};
+
+const isBook = (
+  item: MovieDetails | TvDetails | BookDetails | null
+): item is BookDetails => {
+  if (!item) return false;
+  return (item as BookDetails).id !== undefined && 'author' in item;
 };
 
 const classNames = (...classes: string[]) => {
@@ -62,7 +73,7 @@ const CreateIssueModal = ({
   const settings = useSettings();
   const { hasPermission } = useUser();
   const { addToast } = useToasts();
-  const { data, error } = useSWR<MovieDetails | TvDetails>(
+  const { data, error } = useSWR<MovieDetails | TvDetails | BookDetails>(
     tmdbId ? `/api/v1/${mediaType}/${tmdbId}` : null
   );
 
@@ -115,7 +126,11 @@ const CreateIssueModal = ({
               <>
                 <div>
                   {intl.formatMessage(messages.toastSuccessCreate, {
-                    title: isMovie(data) ? data.title : data.name,
+                    title: isMovie(data)
+                      ? data.title
+                      : isBook(data)
+                        ? data.title
+                        : data.name,
                     strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
                   })}
                 </div>
@@ -152,15 +167,29 @@ const CreateIssueModal = ({
             backgroundClickable
             onCancel={onCancel}
             title={intl.formatMessage(messages.reportissue)}
-            subTitle={data && isMovie(data) ? data?.title : data?.name}
+            subTitle={
+              data
+                ? isMovie(data)
+                  ? data.title
+                  : isBook(data)
+                    ? data.title
+                    : data.name
+                : undefined
+            }
             cancelText={intl.formatMessage(globalMessages.close)}
             onOk={() => handleSubmit()}
             okText={intl.formatMessage(messages.submitissue)}
             loading={!data && !error}
-            backdrop={data?.backdropPath}
+            backdrop={
+              data && isBook(data)
+                ? data.backdropPath
+                : data?.backdropPath
+                  ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+                  : undefined
+            }
             cache={mediaType === 'book' ? 'hardcover' : 'tmdb'}
           >
-            {mediaType === 'tv' && data && !isMovie(data) && (
+            {mediaType === 'tv' && data && !isMovie(data) && !isBook(data) && (
               <>
                 <div className="form-row">
                   <label htmlFor="problemSeason" className="text-label">

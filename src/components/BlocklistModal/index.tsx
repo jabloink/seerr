@@ -115,7 +115,11 @@ const BlocklistModal = ({
         }
         okButtonType="danger"
         okDisabled={isUpdating}
-        backdrop={data?.backdropPath}
+        backdrop={
+          type === 'book'
+            ? data?.backdropPath
+            : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`
+        }
         cache={type === 'book' ? 'hardcover' : 'tmdb'}
       />
     </Transition>

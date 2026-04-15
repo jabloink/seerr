@@ -288,7 +288,7 @@ const CollectionRequestModal = ({
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
-      backdrop={data?.backdropPath}
+      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
       {hasAutoApprove && !quota?.movie.restricted && (
         <div className="mt-6">

@@ -224,7 +224,11 @@ const IssueDetails = () => {
           <CachedImage
             type={isBook(data) ? 'hardcover' : 'tmdb'}
             alt=""
-            src={data.backdropPath}
+            src={
+              isBook(data)
+                ? data.backdropPath
+                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data.backdropPath}`
+            }
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
             priority
@@ -244,7 +248,9 @@ const IssueDetails = () => {
             type={isBook(data) ? 'hardcover' : 'tmdb'}
             src={
               data.posterPath
-                ? data.posterPath
+                ? isBook(data)
+                  ? data.posterPath
+                  : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.posterPath}`
                 : '/images/seerr_poster_not_found.png'
             }
             alt=""
