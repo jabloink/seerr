@@ -407,7 +407,7 @@ const TvRequestModal = ({
       )}
       modalSubTitle={data.name}
       tmdbId={tmdbId}
-      backdrop={data?.backdropPath}
+      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     />
   ) : (
     <Modal
@@ -482,7 +482,7 @@ const TvRequestModal = ({
             ? intl.formatMessage(globalMessages.back)
             : intl.formatMessage(globalMessages.cancel)
       }
-      backdrop={data?.backdropPath}
+      backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
       {editRequest
         ? isOwner

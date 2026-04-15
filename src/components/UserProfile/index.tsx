@@ -44,6 +44,12 @@ const messages = defineMessages('components.UserProfile', {
 
 type MediaTitle = MovieDetails | TvDetails | BookDetails;
 
+const isBook = (
+  media: MovieDetails | TvDetails | BookDetails
+): media is BookDetails => {
+  return (media as BookDetails).author !== undefined;
+};
+
 const UserProfile = () => {
   const intl = useIntl();
   const router = useRouter();
@@ -138,7 +144,11 @@ const UserProfile = () => {
             isDarker
             backgroundImages={Object.values(availableTitles)
               .filter((media) => media.backdropPath)
-              .map((media) => media.backdropPath ?? '')
+              .map((media) =>
+                isBook(media)
+                  ? (media.backdropPath ?? '')
+                  : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${media.backdropPath}`
+              )
               .slice(0, 6)}
           />
         </div>

@@ -133,7 +133,11 @@ const IssueItem = ({ issue }: IssueItemProps) => {
         <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
           <CachedImage
             type={isBook(title) ? 'hardcover' : 'tmdb'}
-            src={title.backdropPath}
+            src={
+              isBook(title)
+                ? title.backdropPath
+                : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+            }
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
@@ -163,7 +167,9 @@ const IssueItem = ({ issue }: IssueItemProps) => {
               type={isBook(title) ? 'hardcover' : 'tmdb'}
               src={
                 title.posterPath
-                  ? title.posterPath
+                  ? isBook(title)
+                    ? title.posterPath
+                    : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
                   : '/images/seerr_poster_not_found.png'
               }
               alt=""

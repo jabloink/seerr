@@ -459,7 +459,11 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
           <div className="absolute inset-0 z-0 w-full bg-cover bg-center xl:w-2/3">
             <CachedImage
               type={requestData.type === 'book' ? 'hardcover' : 'tmdb'}
-              src={title.backdropPath}
+              src={
+                requestData.type === 'book'
+                  ? title.backdropPath
+                  : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+              }
               alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
@@ -489,7 +493,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                 type={requestData.type === 'book' ? 'hardcover' : 'tmdb'}
                 src={
                   title.posterPath
-                    ? title.posterPath
+                    ? requestData.type === 'book'
+                      ? title.posterPath
+                      : `https://image.tmdb.org/t/p/w600_and_h900_bestv2${title.posterPath}`
                     : '/images/seerr_poster_not_found.png'
                 }
                 alt=""
