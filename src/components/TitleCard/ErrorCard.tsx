@@ -69,7 +69,7 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
                 type === 'movie'
                   ? 'bg-blue-500'
                   : type === 'book'
-                    ? 'bg-green-600'
+                    ? 'bg-red-600'
                     : 'bg-purple-600'
               }`}
             >
@@ -123,7 +123,9 @@ const ErrorCard = ({ id, tmdbId, tvdbId, type, canExpand }: ErrorCardProps) => {
               >
                 <div className="flex items-center">
                   <span className="mr-2 font-bold text-gray-400">
-                    {intl.formatMessage(type === 'book' ? messages.hcid : messages.tmdbid)}
+                    {intl.formatMessage(
+                      type === 'book' ? messages.hcid : messages.tmdbid
+                    )}
                   </span>
                   {tmdbId}
                 </div>
