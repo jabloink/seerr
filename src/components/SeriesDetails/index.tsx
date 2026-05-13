@@ -14,7 +14,7 @@ import Error from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import { MediaStatus } from '@server/constants/media';
+import { MediaStatus, MediaType } from '@server/constants/media';
 import type { Series } from '@server/models/Series';
 import { useRouter } from 'next/router';
 import { Fragment, useMemo, useState } from 'react';
@@ -234,6 +234,7 @@ const SeriesDetails = ({ series }: SeriesDetailsProps) => {
                   downloadItem={downloadStatusAudio}
                   title={titlesAudio}
                   is4k
+                  mediaType={MediaType.BOOK}
                   inProgress={data.books.some(
                     (book) =>
                       (book.mediaInfo?.downloadStatus4k ?? []).length > 0
