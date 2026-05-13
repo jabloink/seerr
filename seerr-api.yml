@@ -5265,6 +5265,7 @@ paths:
             enum:
               - movie
               - tv
+              - book
       responses:
         '200':
           description: Blocklist details in JSON
@@ -5288,6 +5289,7 @@ paths:
             enum:
               - movie
               - tv
+              - book
       responses:
         '204':
           description: Succesfully removed media item
@@ -5398,6 +5400,7 @@ paths:
             enum:
               - movie
               - tv
+              - book
       responses:
         '200':
           description: Blocklist details in JSON
@@ -5424,6 +5427,7 @@ paths:
             enum:
               - movie
               - tv
+              - book
       responses:
         '204':
           description: Succesfully removed media item
@@ -5510,6 +5514,7 @@ paths:
             enum:
               - movie
               - tv
+              - book
       responses:
         '204':
           description: Succesfully removed watchlist item
