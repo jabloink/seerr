@@ -6,7 +6,7 @@ import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { initI18n } from '@server/i18n';
 import { startJobs } from '@server/job/schedule';
-import { restoreBookData, revertBookChanges } from '@server/lib/bookMigration';
+import { applyForkSchema } from '@server/lib/forkSchema';
 import notificationManager from '@server/lib/notifications';
 import DiscordAgent from '@server/lib/notifications/agents/discord';
 import EmailAgent from '@server/lib/notifications/agents/email';
@@ -73,16 +73,12 @@ app
       : await dataSource.initialize();
 
     // Run migrations in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' || isPgsql) {
       if (isPgsql) {
-        await revertBookChanges(dbConnection);
-        await dbConnection.runMigrations();
-        await restoreBookData(dbConnection);
+        await applyForkSchema(dbConnection);
       } else {
         await dbConnection.query('PRAGMA foreign_keys=OFF');
-        await revertBookChanges(dbConnection);
-        await dbConnection.runMigrations();
-        await restoreBookData(dbConnection);
+        await applyForkSchema(dbConnection);
         await dbConnection.query('PRAGMA foreign_keys=ON');
       }
     }

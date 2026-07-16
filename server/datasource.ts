@@ -143,7 +143,7 @@ const postgresDevConfig: DataSourceOptions = {
   // Bounds pool acquisition waits so exhaustion surfaces as errors instead of a silent hang
   connectTimeoutMS: intFromEnv('DB_CONNECT_TIMEOUT_MS', 30000),
   synchronize: false,
-  migrationsRun: true,
+  migrationsRun: false,
   logging: boolFromEnv('DB_LOG_QUERIES'),
   entities,
   migrations: ['server/migration/postgres/**/*.ts'],
