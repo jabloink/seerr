@@ -1,6 +1,7 @@
 import { UserType } from '@server/constants/user';
 import dataSource, { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { applyForkSchema } from '@server/lib/forkSchema';
 import gravatarUrl from 'gravatar-url';
 
 export interface SeedDbOptions {
@@ -91,7 +92,7 @@ export async function seedTestDb(options: SeedDbOptions = {}): Promise<void> {
   }
 
   if (options.withMigrations) {
-    await dbConnection.runMigrations();
+    await applyForkSchema(dbConnection);
   } else {
     await dbConnection.synchronize();
   }
