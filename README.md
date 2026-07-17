@@ -2,8 +2,11 @@
 <img src="./public/logo_full.svg" alt="Seerr" style="margin: 20px 0;">
 </p>
 
+> [!IMPORTANT]
+> A pull request to Seerr is on hold until Lidarr support is fully merged.
+
 > [!WARNING]
->
+> 
 > ### Book Support Fork
 >
 > This fork adds book support to Seerr using [Hardcover](https://hardcover.app). It is currently in testing and under active development.
