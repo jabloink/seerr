@@ -10,7 +10,10 @@ import {
 } from '@server/lib/scanners/jellyfin';
 import { plexFullScanner, plexRecentScanner } from '@server/lib/scanners/plex';
 import { radarrScanner } from '@server/lib/scanners/radarr';
-import { readarrScanner } from '@server/lib/scanners/readarr';
+import {
+  readarrRecentScanner,
+  readarrScanner,
+} from '@server/lib/scanners/readarr';
 import { sonarrScanner } from '@server/lib/scanners/sonarr';
 import type { JobId } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
@@ -176,6 +179,26 @@ export const startJobs = (): void => {
     }),
     running: () => sonarrScanner.status().running,
     cancelFn: () => sonarrScanner.cancel(),
+  });
+
+  // Run readarr recently added scan every 10 minutes
+  scheduledJobs.push({
+    id: 'readarr-recently-added-scan',
+    name: 'Readarr Recently Added Scan',
+    type: 'process',
+    interval: 'minutes',
+    cronSchedule: jobs['readarr-recently-added-scan'].schedule,
+    job: schedule.scheduleJob(
+      jobs['readarr-recently-added-scan'].schedule,
+      () => {
+        logger.info('Starting scheduled job: Readarr Recently Added Scan', {
+          label: 'Jobs',
+        });
+        readarrRecentScanner.run();
+      }
+    ),
+    running: () => readarrRecentScanner.status().running,
+    cancelFn: () => readarrRecentScanner.cancel(),
   });
 
   // Run full readarr scan every 24 hours

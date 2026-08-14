@@ -86,6 +86,7 @@ const messages: { [messageName: string]: MessageDescriptor } = defineMessages(
     'availability-sync': 'Media Availability Sync',
     'radarr-scan': 'Radarr Scan',
     'readarr-scan': 'Readarr Scan',
+    'readarr-recently-added-scan': 'Readarr Recently Added Scan',
     'sonarr-scan': 'Sonarr Scan',
     'download-sync': 'Download Sync',
     'download-sync-reset': 'Download Sync Reset',
