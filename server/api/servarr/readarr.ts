@@ -106,6 +106,11 @@ interface ReadarrEdition {
   isbn13?: string;
 }
 
+interface ReadarrAuthor {
+  id: number;
+  monitored: boolean;
+}
+
 class ReadarrAPI extends ServarrBase<{ bookId: number }> {
   constructor({ url, apiKey }: { url: string; apiKey: string }) {
     super({ url, apiKey, cacheName: 'readarr', apiName: 'Readarr' });
@@ -188,6 +193,30 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
     }
   };
 
+  public async monitorAuthor(authorId: number): Promise<void> {
+    try {
+      const response = await this.axios.get<ReadarrAuthor>(
+        `/author/${authorId}`
+      );
+
+      if (response.data.monitored) {
+        return;
+      }
+
+      await this.axios.put<ReadarrAuthor>(`/author/${authorId}`, {
+        ...response.data,
+        monitored: true,
+      });
+    } catch (e) {
+      logger.error('Failed to monitor author', {
+        label: 'Readarr API',
+        errorMessage: e.message,
+        authorId,
+      });
+      throw new Error('Failed to monitor author', { cause: e });
+    }
+  }
+
   public addBook = async (
     options: ReadarrBookOptions
   ): Promise<ReadarrBook> => {
@@ -244,6 +273,16 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
             book: data,
           });
 
+          try {
+            await this.monitorAuthor(data.authorId);
+          } catch (e) {
+            logger.warn('Failed to re-monitor author', {
+              label: 'Readarr',
+              errorMessage: e.message,
+              authorId: data.authorId,
+            });
+          }
+
           if (options.searchNow) {
             this.searchBook(data.id);
           }
@@ -263,6 +302,17 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
           'Book is already monitored in Readarr. Skipping add and returning success',
           { label: 'Readarr' }
         );
+
+        try {
+          await this.monitorAuthor(book.authorId);
+        } catch (e) {
+          logger.warn('Failed to re-monitor author', {
+            label: 'Readarr',
+            errorMessage: e.message,
+            authorId: book.authorId,
+          });
+        }
+
         if (options.searchNow) {
           this.searchBook(book.id);
         }
@@ -309,6 +359,16 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
           label: 'Readarr',
           book: data,
         });
+
+        try {
+          await this.monitorAuthor(data.authorId);
+        } catch (e) {
+          logger.warn('Failed to re-monitor author', {
+            label: 'Readarr',
+            errorMessage: e.message,
+            authorId: data.authorId,
+          });
+        }
 
         if (options.searchNow) {
           this.searchBook(data.id);
