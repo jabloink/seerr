@@ -105,6 +105,12 @@ interface ReadarrEdition {
   isbn13?: string;
 }
 
+interface ReadarrAuthor {
+  id: number;
+  monitored: boolean;
+  [key: string]: unknown;
+}
+
 class ReadarrAPI extends ServarrBase<{ bookId: number }> {
   constructor({ url, apiKey }: { url: string; apiKey: string }) {
     super({ url, apiKey, cacheName: 'readarr', apiName: 'Readarr' });
@@ -141,9 +147,9 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
 
   public getBook = async (id: number): Promise<ReadarrBook> => {
     try {
-      const data = await this.get<ReadarrBook>(`/book/${id}`);
+      const response = await this.axios.get<ReadarrBook>(`/book/${id}`);
 
-      return data;
+      return response.data;
     } catch (e) {
       throw new Error(`[Readarr] Failed to retrieve book: ${e.message}`, {
         cause: e,
@@ -176,17 +182,36 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
 
   public getEditions = async (id: number): Promise<ReadarrEdition[]> => {
     try {
-      const response = await this.get<ReadarrEdition[]>(`/edition`, {
+      const response = await this.axios.get<ReadarrEdition[]>(`/edition`, {
         params: { bookId: id },
       });
 
-      return response;
+      return response.data;
     } catch (e) {
       throw new Error(`[Readarr] Failed to retrieve book: ${e.message}`, {
         cause: e,
       });
     }
   };
+
+  private async monitorAuthor(authorId: number): Promise<void> {
+    const response = await this.axios.get<ReadarrAuthor>(`/author/${authorId}`);
+    const author = response.data;
+
+    if (author.monitored) {
+      return;
+    }
+
+    await this.axios.put<ReadarrAuthor>(`/author/${authorId}`, {
+      ...author,
+      monitored: true,
+    });
+
+    logger.info('Set existing author to monitored in Readarr.', {
+      label: 'Readarr',
+      authorId,
+    });
+  }
 
   public addBook = async (
     options: ReadarrBookOptions
@@ -206,8 +231,7 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
         return book;
       }
 
-      // book exists in Readarr but is neither downloaded nor monitored
-      if (book.id && !book.monitored) {
+      if (book.id) {
         const bookData = await this.getBook(book.id);
         const editionData = await this.getEditions(book.id);
         const response = await this.axios.put<ReadarrBook>(`/book`, {
@@ -220,10 +244,12 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
             tags: options.tags,
             rootFolderPath: options.rootFolderPath,
           },
-          editions: editionData.map((edition) => ({
-            ...edition,
-            monitored: edition.foreignEditionId === book.foreignEditionId,
-          })),
+          editions: book.monitored
+            ? editionData
+            : editionData.map((edition) => ({
+                ...edition,
+                monitored: edition.foreignEditionId === book.foreignEditionId,
+              })),
           addOptions: {
             searchForNewBook: options.searchNow,
           },
@@ -231,6 +257,7 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
         const data = response.data;
 
         if (data.monitored) {
+          await this.monitorAuthor(data.authorId);
           logger.info(
             'Found existing book in Readarr and set it to monitored.',
             {
@@ -256,17 +283,6 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
           });
           throw new Error('Failed to update existing book in Readarr');
         }
-      }
-
-      if (book.id) {
-        logger.info(
-          'Book is already monitored in Readarr. Skipping add and returning success',
-          { label: 'Readarr' }
-        );
-        if (options.searchNow) {
-          this.searchBook(book.id);
-        }
-        return book;
       }
 
       const data = await this.post<ReadarrBook>(`/book`, {
@@ -304,6 +320,9 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
       });
 
       if (data.id) {
+        // Readarr reuses an existing author without updating its monitoring.
+        await this.monitorAuthor(data.authorId);
+
         logger.info('Readarr accepted request', { label: 'Readarr' });
         logger.debug('Readarr add details', {
           label: 'Readarr',
@@ -322,15 +341,12 @@ class ReadarrAPI extends ServarrBase<{ bookId: number }> {
       }
       return data;
     } catch (e) {
-      logger.error(
-        'Failed to add book to Readarr. This might happen if the book already exists, in which case you can safely ignore this error.',
-        {
-          label: 'Readarr',
-          errorMessage: e.message,
-          options,
-          response: e?.response?.data,
-        }
-      );
+      logger.error('Failed to add book to Readarr.', {
+        label: 'Readarr',
+        errorMessage: e.message,
+        options,
+        response: e?.response?.data,
+      });
       throw new Error('Failed to add book to Readarr', { cause: e });
     }
   };
