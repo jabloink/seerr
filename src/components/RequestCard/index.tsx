@@ -372,7 +372,11 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             <CachedImage
               type={request.type === 'book' ? 'hardcover' : 'tmdb'}
               alt=""
-              src={title.backdropPath}
+              src={
+                request.type === 'book'
+                  ? title.backdropPath
+                  : `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+              }
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               fill
             />
