@@ -375,6 +375,7 @@ export type JobId =
   | 'radarr-scan'
   | 'sonarr-scan'
   | 'readarr-scan'
+  | 'readarr-recently-added-scan'
   | 'download-sync'
   | 'download-sync-reset'
   | 'jellyfin-recently-added-scan'
@@ -608,6 +609,9 @@ class Settings {
         },
         'readarr-scan': {
           schedule: '0 30 4 * * *',
+        },
+        'readarr-recently-added-scan': {
+          schedule: '0 */10 * * * *',
         },
         'availability-sync': {
           schedule: '0 0 5 * * *',
